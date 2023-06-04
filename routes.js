@@ -4,11 +4,17 @@ const { getAllNoteHandler, createNoteHandler, getNoteIdHandler, editNoteHandler,
 const router = express.Router()
 
 router.post('/register', registerHandler)
+
 router.post('/login', loginHandler)
+
 router.post('/notes', createNoteHandler)
+
 router.get('/notes', getAllNoteHandler)
+
 router.get('/notes/:id', getNoteIdHandler)
+
 router.post('/notes/edit', editNoteHandler)
+
 router.delete('/notes/delete', deleteNoteHandler)
 
 module.exports = router

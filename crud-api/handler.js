@@ -2,29 +2,38 @@ const jwt = require ('jsonwebtoken')
 const {nanoid} = require ('nanoid')
 const axios = require('axios')
 const pool =  require('./database')
+const ImgUpload = require('./imguploads');
+
 
 const createNoteHandler = async (req, res) => {
-    const { title, tags } = req.body;
-    const token = req.headers.authorization; 
-    const image = req.body.image; 
-  
-    if (!title || !tags || !image) {
-      return res.status(400).json({ error: true, message: 'Please provide title, tags, and OCR image data for the note.' });
-    }
-  
-    try {
-      const decoded = jwt.verify(token, 'your-secret-key');
-      const userId = decoded.id;
-  
+  const { title, tags } = req.body;
+  const token = req.headers.authorization;
+  const image = req.body.image;
+
+  if (!title || !tags || !image) {
+    return res.status(400).json({ error: true, message: 'Please provide title, tags, and OCR image data for the note.' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, 'your-secret-key');
+    const userId = decoded.id;
+
+    // Upload the image to Google Cloud Storage
+    await ImgUpload.uploadToGcs(req, res, async (err) => {
+      if (err) {
+        console.error('Error uploading image:', err);
+        return res.status(500).json({ error: true, message: 'An error occurred while uploading the image.' });
+      }
+
       // Make a request to the OCR API to extract text from the image
       const ocrResponse = await axios.post('https://api.ocr.space/parse/image', {
         apikey: 'YOUR_API_KEY',
         base64Image: image,
         isOverlayRequired: true,
       });
-  
+
       const extractedText = ocrResponse.data.ParsedResults[0].ParsedText;
-  
+
       const id = nanoid(16);
 
       const note = {
@@ -35,7 +44,7 @@ const createNoteHandler = async (req, res) => {
         body: extractedText,
         updated: new Date(),
       };
-  
+
       pool.query(
         'INSERT INTO notes (id, user_id, title, tags, body, updated) VALUES (?, ?, ?, ?, ?, ?)',
         [id, userId, title, tags, extractedText, note.updated],
@@ -44,13 +53,14 @@ const createNoteHandler = async (req, res) => {
             console.error('Error inserting note:', error);
             return res.status(500).json({ error: true, message: 'An error occurred while creating the note.' });
           }
-  
+
           res.status(201).json(note);
         }
       );
-    } catch (error) {
-      return res.status(401).json({ error: true, message: 'Invalid token' });
-    }
+    });
+  } catch (error) {
+    return res.status(401).json({ error: true, message: 'Invalid token' });
+  }
 };
 
 const getAllNoteHandler = (req,res) => {

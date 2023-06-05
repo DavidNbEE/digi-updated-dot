@@ -8,5 +8,5 @@ app.use(routes)
 const port = 3000
 
 app.listen(port, ()=> {
-    console.log(`server berjalan di http://localhost:3000`)
+    console.log(`server berjalan di http://localhost:${port}`)
 })

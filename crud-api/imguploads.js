@@ -1,18 +1,16 @@
-'use strict';
 const { Storage } = require('@google-cloud/storage');
-const fs = require('fs');
 const moment = require('moment');
 const path = require('path');
 
 const serviceAccountKeyPath = path.resolve('./serviceaccountkey.json');
 
-//ganti akunnya
+// Konfigurasi Google Cloud Storage
 const storage = new Storage({
   projectId: 'submission-mgce-davidnababan',
   keyFilename: serviceAccountKeyPath
 });
 
-//sesuaikan nama bucketnya
+// Sesuaikan nama bucketnya
 const bucketName = 'upload-bucket12';
 const bucket = storage.bucket(bucketName);
 
@@ -22,30 +20,36 @@ function getPublicUrl(filename) {
 
 const ImgUpload = {};
 
-ImgUpload.uploadToGcs = (req, res, next) => {
-  if (!req.file) return next();
-
-  const gcsname = moment().format('YYYYMMDD-HHmmss');
-  const file = bucket.file(gcsname);
-
-  const stream = file.createWriteStream({
-    metadata: {
-      contentType: req.file.mimetype
+ImgUpload.uploadToGcs = (imageData) => {
+  return new Promise((resolve, reject) => {
+    if (!imageData) {
+      reject('No image data provided');
+      return;
     }
-  });
 
-  stream.on('error', (err) => {
-    req.file.cloudStorageError = err;
-    next(err);
-  });
+    const gcsname = moment().format('YYYYMMDD-HHmmss');
+    const file = bucket.file(gcsname);
 
-  stream.on('finish', () => {
-    req.file.cloudStorageObject = gcsname;
-    req.file.cloudStoragePublicUrl = getPublicUrl(gcsname);
-    next();
-  });
+    const stream = file.createWriteStream({
+      metadata: {
+        contentType: 'image/jpeg' // Ubah tipe konten sesuai dengan format gambar yang dikirimkan
+      }
+    });
 
-  stream.end(req.file.buffer);
+    stream.on('error', (err) => {
+      console.error('Error uploading image:', err);
+      reject(err);
+    });
+
+    stream.on('finish', () => {
+      const publicUrl = getPublicUrl(gcsname);
+      console.log('Image uploaded successfully.');
+      console.log('Public URL:', publicUrl);
+      resolve(publicUrl);
+    });
+
+    stream.end(imageData);
+  });
 };
 
 module.exports = ImgUpload;

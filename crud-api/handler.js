@@ -5,6 +5,7 @@ const pool =  require('./database')
 const ImgUpload = require('./imguploads');
 
 
+
 const createNoteHandler = async (req, res) => {
   const { title, tags } = req.body;
   const token = req.headers.authorization;
@@ -19,49 +20,45 @@ const createNoteHandler = async (req, res) => {
     const userId = decoded.id;
 
     // Upload the image to Google Cloud Storage
-    await ImgUpload.uploadToGcs(req, res, async (err) => {
-      if (err) {
-        console.error('Error uploading image:', err);
-        return res.status(500).json({ error: true, message: 'An error occurred while uploading the image.' });
-      }
+    const imageUrl = await ImgUpload.uploadToGcs(image);
 
-      // Make a request to the OCR API to extract text from the image
-      const ocrResponse = await axios.post('https://api.ocr.space/parse/image', {
-        apikey: 'YOUR_API_KEY',
-        base64Image: image,
-        isOverlayRequired: true,
-      });
-
-      const extractedText = ocrResponse.data.ParsedResults[0].ParsedText;
-
-      const id = nanoid(16);
-
-      const note = {
-        id,
-        userId,
-        title,
-        tags,
-        body: extractedText,
-        updated: new Date(),
-      };
-
-      pool.query(
-        'INSERT INTO notes (id, user_id, title, tags, body, updated) VALUES (?, ?, ?, ?, ?, ?)',
-        [id, userId, title, tags, extractedText, note.updated],
-        (error) => {
-          if (error) {
-            console.error('Error inserting note:', error);
-            return res.status(500).json({ error: true, message: 'An error occurred while creating the note.' });
-          }
-
-          res.status(201).json(note);
-        }
-      );
+    // Make a request to the OCR API to extract text from the image
+    const ocrResponse = await axios.post('https://api.ocr.space/parse/image', {
+      apikey: 'YOUR_API_KEY',
+      imageUrl: imageUrl,
+      isOverlayRequired: true,
     });
+
+    const extractedText = ocrResponse.data.ParsedResults[0].ParsedText;
+
+    const id = nanoid(16);
+
+    const note = {
+      id,
+      userId,
+      title,
+      tags,
+      body: extractedText,
+      updated: new Date(),
+    };
+
+    pool.query(
+      'INSERT INTO notes (id, user_id, title, tags, body, updated) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, userId, title, tags, extractedText, note.updated],
+      (error) => {
+        if (error) {
+          console.error('Error inserting note:', error);
+          return res.status(500).json({ error: true, message: 'An error occurred while creating the note.' });
+        }
+
+        res.status(201).json(note);
+      }
+    );
   } catch (error) {
     return res.status(401).json({ error: true, message: 'Invalid token' });
   }
 };
+
 
 const getAllNoteHandler = (req,res) => {
   const { authToken, page, size } = req.body

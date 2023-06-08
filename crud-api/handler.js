@@ -39,19 +39,20 @@ const createNoteHandler = async (req, res) => {
       title,
       tags,
       body: extractedText,
+      imageUrl,
       updated: new Date(),
     };
 
     pool.query(
-      'INSERT INTO notes (id, user_id, title, tags, body, updated) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, userId, title, tags, extractedText, note.updated],
+      'INSERT INTO notes (id, user_id, title, tags, body, imageUrl, updated) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, userId, title, tags, extractedText, imageUrl, note.updated],
       (error) => {
         if (error) {
           console.error('Error inserting note:', error);
           return res.status(500).json({ error: true, message: 'An error occurred while creating the note.' });
         }
 
-        res.status(201).json(note);
+        res.status(201).json({error : false, data : note});
       }
     );
   } catch (error) {

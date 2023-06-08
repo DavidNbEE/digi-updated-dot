@@ -103,8 +103,9 @@ const registerHandler = (req, res) => {
         }
   
         const token = jwt.sign({ userId: user.id }, 'your-secret-key');
+        const resultlogin = {userEmail : usernameORemail, password : password, token : token};
   
-        res.json({ token });
+        res.status(200).json({ error:false, message: 'Login Succeed', token });
       });
     });
   };

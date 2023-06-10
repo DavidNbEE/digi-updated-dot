@@ -3,26 +3,24 @@ const {nanoid} = require ('nanoid')
 const axios = require('axios')
 const pool =  require('./database')
 const ImgUpload = require('./imguploads');
+const uploadImage = require('./uploadLogic')
 
-const testuploadgcs = async (req, res) => {
-  const image = req.body
+const handleImageUpload = async (req, res) => {
+  try {
+    const file = req.file; // File gambar yang diunggah
+    const imageUrl = await uploadImage(file); // Upload gambar ke Google Cloud Storage Bucket
 
-  if (!image) {
-    return res.status(401).json({ error: true, message: 'Where is the image?' })
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Terjadi kesalahan saat mengunggah gambar' });
   }
-
-  const imageurl = await ImgUpload.uploadToGcs(image)
-  const gcimage = imageurl
-
-  if (gcimage) {
-    res.status(200).json({ error: false, message: 'Success upload image to GCS', gcimage })
-  }
-}
+};
 
 const createNoteHandler = async (req, res) => {
   const title = req.body;
   const authToken = req.headers.authorization;
-  const image = req.body;
+  const file = req.file
 
   if (!title || !image) {
     return res.status(400).json({ error: true, message: 'title and image are missing' });
@@ -32,8 +30,7 @@ const createNoteHandler = async (req, res) => {
     const decoded = jwt.verify(authToken, 'your-secret-key');
     const userId = decoded.id;
 
-    // Upload the image to Google Cloud Storage
-    const imageUrl = await ImgUpload.uploadToGcs(image);
+    const imageUrl = await uploadImage(file)
 
     // Make a request to the OCR API to extract text from the image
     const ocrResponse = await axios.post('https://api.ocr.space/parse/image', {
@@ -236,4 +233,4 @@ const deleteNoteHandler = async (req, res) => {
     getNoteIdHandler,
     editNoteHandler,
     deleteNoteHandler,
-    testuploadgcs} 
+    handleImageUpload} 

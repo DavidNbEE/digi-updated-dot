@@ -2,20 +2,22 @@ const jwt = require ('jsonwebtoken')
 const {nanoid} = require ('nanoid')
 const axios = require('axios')
 const pool =  require('./database')
-const ImgUpload = require('./imguploads');
-const uploadImage = require('./uploadLogic')
+const Multer = require('multer');
+const imgUpload = require('../imgUploads/imgUpload')
 
-const handleImageUpload = async (req, res) => {
-  try {
-    const file = req.file; // File gambar yang diunggah
-    const imageUrl = await uploadImage(file); // Upload gambar ke Google Cloud Storage Bucket
+const multer = Multer({
+  storage: Multer.memoryStorage,
+  filesize: 5 * 1024 * 1024
+})
 
-    res.json({ imageUrl });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Terjadi kesalahan saat mengunggah gambar' });
+const uploadimghandler = (req,res,next) => {
+  const data = req.body
+  if (req.file && req.file.cloudStoragePublicUrl){
+    data.imageUrl = req.file.cloudStoragePublicUrl
   }
-};
+  res.send(data)
+}
+
 
 const createNoteHandler = async (req, res) => {
   const title = req.body;
@@ -233,4 +235,4 @@ const deleteNoteHandler = async (req, res) => {
     getNoteIdHandler,
     editNoteHandler,
     deleteNoteHandler,
-    handleImageUpload} 
+    uploadimghandler} 

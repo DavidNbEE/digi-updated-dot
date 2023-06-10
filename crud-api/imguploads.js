@@ -2,12 +2,12 @@ const { Storage } = require('@google-cloud/storage');
 const moment = require('moment');
 const path = require('path');
 
-const serviceAccountKeyPath = path.resolve('./serviceaccountkey.json');
+const keyPath = path.resolve('./serviceaccountkey.json');
 
 // Konfigurasi Google Cloud Storage
 const storage = new Storage({
   projectId: 'testing-diginote-2023',
-  keyFilename: serviceAccountKeyPath
+  keyFilename: keyPath
 });
 
 // Sesuaikan nama bucketnya
@@ -32,7 +32,7 @@ ImgUpload.uploadToGcs = (imageData) => {
 
     const stream = file.createWriteStream({
       metadata: {
-        contentType: 'image/jpeg' // Ubah tipe konten sesuai dengan format gambar yang dikirimkan
+        contentType: 'application/octet-stream' // Ubah tipe konten sesuai dengan format gambar yang dikirimkan
       }
     });
 

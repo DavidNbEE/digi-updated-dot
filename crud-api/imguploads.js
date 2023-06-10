@@ -6,12 +6,12 @@ const serviceAccountKeyPath = path.resolve('./serviceaccountkey.json');
 
 // Konfigurasi Google Cloud Storage
 const storage = new Storage({
-  projectId: 'submission-mgce-davidnababan',
+  projectId: 'testing-diginote-2023',
   keyFilename: serviceAccountKeyPath
 });
 
 // Sesuaikan nama bucketnya
-const bucketName = 'upload-bucket12';
+const bucketName = 'url-photos-diginotes';
 const bucket = storage.bucket(bucketName);
 
 function getPublicUrl(filename) {

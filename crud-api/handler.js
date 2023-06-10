@@ -4,19 +4,32 @@ const axios = require('axios')
 const pool =  require('./database')
 const ImgUpload = require('./imguploads');
 
+const testuploadgcs = async (req, res) => {
+  const image = req.body
 
+  if (!image) {
+    return res.status(401).json({ error: true, message: 'Where is the image?' })
+  }
+
+  const imageurl = await ImgUpload.uploadToGcs(image)
+  const gcimage = imageurl
+
+  if (gcimage) {
+    res.status(200).json({ error: false, message: 'Success upload image to GCS', gcimage })
+  }
+}
 
 const createNoteHandler = async (req, res) => {
-  const { title, tags } = req.body;
-  const token = req.headers.authorization;
-  const image = req.body.image;
+  const title = req.body;
+  const authToken = req.headers.authorization;
+  const image = req.body;
 
-  if (!title || !tags || !image) {
-    return res.status(400).json({ error: true, message: 'Please provide title, tags, and OCR image data for the note.' });
+  if (!title || !image) {
+    return res.status(400).json({ error: true, message: 'Please provide title and image for the note.' });
   }
 
   try {
-    const decoded = jwt.verify(token, 'your-secret-key');
+    const decoded = jwt.verify(authToken, 'your-secret-key');
     const userId = decoded.id;
 
     // Upload the image to Google Cloud Storage
@@ -25,27 +38,26 @@ const createNoteHandler = async (req, res) => {
     // Make a request to the OCR API to extract text from the image
     const ocrResponse = await axios.post('https://api.ocr.space/parse/image', {
       apikey: 'YOUR_API_KEY',
-      imageUrl: imageUrl,
+      image: image,
       isOverlayRequired: true,
     });
 
     const extractedText = ocrResponse.data.ParsedResults[0].ParsedText;
 
-    const id = nanoid(16);
+    const noteId = nanoid(16);
 
     const note = {
-      id,
+      noteId,
       userId,
       title,
-      tags,
-      body: extractedText,
+      description: extractedText,
       imageUrl,
       updated: new Date(),
     };
 
     pool.query(
-      'INSERT INTO notes (id, user_id, title, tags, body, imageUrl, updated) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, userId, title, tags, extractedText, imageUrl, note.updated],
+      'INSERT INTO notes (noteId, userId, title, description , imageUrl, updated) VALUES (?, ?, ?, ?, ?, ?)',
+      [noteId, userId, title, note.description, imageUrl, note.updated],
       (error) => {
         if (error) {
           console.error('Error inserting note:', error);
@@ -62,14 +74,16 @@ const createNoteHandler = async (req, res) => {
 
 
 const getAllNoteHandler = (req,res) => {
-  const { authToken, page, size } = req.body
+  const authToken = req.body
+  //const {page, size} = req.body
 
   try{
-    const userID = authToken
-    const startIndex = (page - 1) * size
+    const decoded = jwt.verify(authToken, 'your-secret-key');
+    const userId = decoded.id;
+    //const startIndex = (page - 1) * size
 
-    pool.query('SELECT * FROM notes where user_id = ? LIMIT ?, ?',
-    [userID, startIndex, size],
+    pool.query('SELECT * FROM notes where userId = ?',
+    [userId],
     (error, results) => {
       if (error) {
         console.error('Error retrieving note list:', error)
@@ -89,15 +103,15 @@ const getAllNoteHandler = (req,res) => {
 }
 
 const getNoteIdHandler = async (req, res) => {
-  const { id } =  req.params
-  const token = req.headers.authorization
+  const { noteId } = req.params
+  const authToken = req.headers.authorization
 
   try {
-    const decoded = jwt.verify(token, 'your-secret-key')
+    const decoded = jwt.verify(authToken, 'your-secret-key')
     const userId = decoded.id
 
-    pool.query('SELECT * FROM notes WHERE id = ? and user_id = ?',
-    [id,userId],
+    pool.query('SELECT * FROM notes WHERE noteId = ? and userId = ?',
+    [noteId,userId],
     (error, results) => {
       if(error){
         console.error('Error retrieving note:', error)
@@ -221,4 +235,5 @@ const deleteNoteHandler = async (req, res) => {
     getAllNoteHandler, 
     getNoteIdHandler,
     editNoteHandler,
-    deleteNoteHandler} 
+    deleteNoteHandler,
+    testuploadgcs} 

@@ -21,8 +21,8 @@ const registerHandler = (req, res) => {
     if (!/[0-9]/.test(password)) {
       return res.status(400).json({ error: true, message: 'Password must contain at least one number' });
     }
-    if (!/[!@#$%^&.*]/.test(password)) {
-      return res.status(400).json({ error: true, message: 'Password must contain at least one special character (!@#$%^&*.)' });
+    if (!/[!@#$%^&.*_]/.test(password)) {
+      return res.status(400).json({ error: true, message: 'Password must contain at least one special character (!@#$%^&*._)' });
     }
   
     const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';
@@ -103,7 +103,6 @@ const registerHandler = (req, res) => {
         }
   
         const token = jwt.sign({ userId: user.id }, 'your-secret-key');
-        const resultlogin = {userEmail : usernameORemail, password : password, token : token};
   
         res.status(200).json({ error:false, message: 'Login Succeed', token });
       });

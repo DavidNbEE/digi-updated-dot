@@ -25,7 +25,7 @@ const createNoteHandler = async (req, res) => {
   const image = req.body;
 
   if (!title || !image) {
-    return res.status(400).json({ error: true, message: 'Please provide title and image for the note.' });
+    return res.status(400).json({ error: true, message: 'title and image are missing' });
   }
 
   try {

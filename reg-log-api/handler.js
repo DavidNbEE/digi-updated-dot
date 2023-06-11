@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
 const pool = require('./database')
 const bcrypt = require('bcrypt')
+const secret = "diginote-secret"
 
 
 
@@ -102,7 +103,7 @@ const registerHandler = (req, res) => {
           return res.status(401).json({ error: true, message: 'Invalid email or password' });
         }
   
-        const token = jwt.sign({ userId: user.id }, 'your-secret-key');
+        const token = jwt.sign({ userId: user.id }, secret);
   
         res.status(200).json({ error:false, message: 'Login Succeed', token });
       });

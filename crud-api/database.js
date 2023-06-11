@@ -1,10 +1,10 @@
 const mysql =  require('mysql')
 
 const pool = mysql.createPool({
-    socketPath: "/cloudsql/testing-diginote-2023:us-central1:test-digi-base",
+    host: "localhost",
     user: "root",
-    password: "DigiNote69",
-    database: "digibase-test",
+    password: "",
+    database: "diginew",
   })
 
 module.exports = pool

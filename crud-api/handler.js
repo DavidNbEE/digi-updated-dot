@@ -9,7 +9,8 @@ const uploadimghandler = (req,res,next) => {
   if (req.file && req.file.cloudStoragePublicUrl){
     data.imageUrl = req.file.cloudStoragePublicUrl
   }
-  res.send(data)
+  const urlphoto = data.imageUrl
+  res.status(200).json({error: true, message :" data", data, urlphoto})
 }
 
 
@@ -26,27 +27,35 @@ const createNoteHandler = async (req, res) => {
     const decoded = jwt.verify(authToken, 'your-secret-key');
     const userId = decoded.id;
 
-    const ocrResponse = await axios.post('https://api.ocr.space/parse/image', {
-      apikey: 'YOUR_API_KEY',
-      image: data,
-      isOverlayRequired: true,
-    });
+//    const ocrResponse = await axios.post('https://api.ocr.space/parse/image', {
+//      apikey: 'YOUR_API_KEY',
+//      image: data,
+//      isOverlayRequired: true,
+ //   });
+
+ //   const extractedText = ocrResponse.data.ParsedResults[0].ParsedText;
+
+    const flaskresponse = await axios.post('linkAPIML', data, {
+      headers: {
+        'Content-Type' : 'multipart/form-data',
+      }
+    })
+
+    const predictions = flaskresponse.data.predictions
+    const extractedText = predictions
 
     if (req.file && req.file.cloudStoragePublicUrl){
       data.imageUrl = req.file.cloudStoragePublicUrl
     }
-    res.send(data)
-
-    const extractedText = ocrResponse.data.ParsedResults[0].ParsedText;
-
+    const urlphoto = data.imageUrl
+    
     const noteId = nanoid(16);
-
     const note = {
       noteId,
       userId,
       title,
       description: extractedText,
-      imageUrl : data,
+      imageUrl : urlphoto,
       updated: new Date(),
     };
 
@@ -177,8 +186,7 @@ const editNoteHandler = async (req, res) => {
         }
 
         const updatedNote = {
-          id,
-          userId,
+          noteId,
           title,
           tags,
           body,
@@ -194,16 +202,16 @@ const editNoteHandler = async (req, res) => {
 }
 
 const deleteNoteHandler = async (req, res) => {
-  const { id } = req.params;
-  const token = req.headers.authorization;
+  const { noteId } = req.params;
+  const authToken = req.headers.authorization;
 
   try {
-    const decoded = jwt.verify(token, 'your-secret-key');
+    const decoded = jwt.verify(authToken, 'your-secret-key');
     const userId = decoded.id;
 
     pool.query(
       'DELETE FROM notes WHERE id = ? AND user_id = ?',
-      [id, userId],
+      [noteId, userId],
       (error, results) => {
         if (error) {
           console.error('Error deleting note:', error);

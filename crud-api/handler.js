@@ -2,13 +2,7 @@ const jwt = require ('jsonwebtoken')
 const {nanoid} = require ('nanoid')
 const axios = require('axios')
 const pool =  require('./database')
-const Multer = require('multer');
 const imgUpload = require('../imgUploads/imgUpload')
-
-const multer = Multer({
-  storage: Multer.memoryStorage,
-  filesize: 5 * 1024 * 1024
-})
 
 const uploadimghandler = (req,res,next) => {
   const data = req.body
@@ -22,24 +16,26 @@ const uploadimghandler = (req,res,next) => {
 const createNoteHandler = async (req, res) => {
   const title = req.body;
   const authToken = req.headers.authorization;
-  const file = req.file
+  const data = req.body
 
-  if (!title || !image) {
-    return res.status(400).json({ error: true, message: 'title and image are missing' });
+  if (!title || !data) {
+    return res.status(400).json({ error: true, message: 'input the title and image' });
   }
 
   try {
     const decoded = jwt.verify(authToken, 'your-secret-key');
     const userId = decoded.id;
 
-    const imageUrl = await uploadImage(file)
-
-    // Make a request to the OCR API to extract text from the image
     const ocrResponse = await axios.post('https://api.ocr.space/parse/image', {
       apikey: 'YOUR_API_KEY',
-      image: image,
+      image: data,
       isOverlayRequired: true,
     });
+
+    if (req.file && req.file.cloudStoragePublicUrl){
+      data.imageUrl = req.file.cloudStoragePublicUrl
+    }
+    res.send(data)
 
     const extractedText = ocrResponse.data.ParsedResults[0].ParsedText;
 
@@ -50,20 +46,20 @@ const createNoteHandler = async (req, res) => {
       userId,
       title,
       description: extractedText,
-      imageUrl,
+      imageUrl : data,
       updated: new Date(),
     };
 
     pool.query(
       'INSERT INTO notes (noteId, userId, title, description , imageUrl, updated) VALUES (?, ?, ?, ?, ?, ?)',
-      [noteId, userId, title, note.description, imageUrl, note.updated],
+      [noteId, userId, title, note.description, note.imageUrl, note.updated],
       (error) => {
         if (error) {
           console.error('Error inserting note:', error);
           return res.status(500).json({ error: true, message: 'An error occurred while creating the note.' });
         }
 
-        res.status(201).json({error : false, data : note});
+        res.status(201).json({error : false, message: 'Note Created!', note});
       }
     );
   } catch (error) {
@@ -92,7 +88,7 @@ const getAllNoteHandler = (req,res) => {
         return res.status(404).json({error: true, message: 'No notes yes.'})
       }
 
-      res.status(200).json({error: false, message: 'Note list retrieved', listnote: results})
+      res.status(200).json({error: false, message: 'All Notes retrieved', listnote: results})
     }
     )
   }
@@ -122,7 +118,7 @@ const getNoteIdHandler = async (req, res) => {
       }
 
       const note = results[0]
-      res.status(200).json(note)
+      res.status(200).json({error: false, message: 'Note retrieved', note})
     })
   }
   catch(error){
@@ -131,16 +127,16 @@ const getNoteIdHandler = async (req, res) => {
 }
 
 const editNoteHandler = async (req, res) => {
-  const { id } = req.params
-  const { title, tags, body } = req.body
+  const { noteId } = req.params
+  const { title, description } = req.body
   const token = req.headers.authorization
 
   try {
     const decoded = jwt.verify(token, 'your-secret-key')
     const userId = decoded.id
 
-    if (!title && !tags && !body) {
-      return res.status(400).json({ error: true, message: 'Please provide at least one field to update (title, tags, or body).' })
+    if (!title && !description) {
+      return res.status(400).json({ error: true, message: 'Please provide title or description' })
     }
 
     let updateFields = []
@@ -156,19 +152,19 @@ const editNoteHandler = async (req, res) => {
       queryParams.push(tags)
     }
 
-    if (body) {
-      updateFields.push('body = ?')
-      queryParams.push(body)
+    if (description) {
+      updateFields.push('description = ?')
+      queryParams.push(description)
     }
 
     updateFields.push('updated = ?')
     queryParams.push(new Date())
 
-    queryParams.push(id)
+    queryParams.push(noteId)
     queryParams.push(userId)
 
     pool.query(
-      `UPDATE notes SET ${updateFields.join(', ')} WHERE id = ? AND user_id = ?`,
+      `UPDATE notes SET ${updateFields.join(', ')} WHERE noteId = ? AND userId = ?`,
       queryParams,
       (error, results) => {
         if (error) {

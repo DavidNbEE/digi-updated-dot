@@ -22,7 +22,7 @@ const registerHandler = (req, res) => {
       return res.status(400).json({ error: true, message: 'Password must contain at least one number' });
     }
     if (!/[!@#$%^&.*_]/.test(password)) {
-      return res.status(400).json({ error: true, message: 'Password must contain at least one special character (!@#$%^&*._)' });
+      return res.status(400).json({ error: true, message: 'At least one special character (! @ # $ % ^ & * . _)' });
     }
   
     const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';

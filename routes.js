@@ -1,9 +1,14 @@
 const express = require('express')
-const multer = require('multer')
+const Multer = require('multer')
 const { registerHandler, loginHandler } = require('./reg-log-api/handler')
 const { getAllNoteHandler, createNoteHandler, getNoteIdHandler, editNoteHandler, deleteNoteHandler, uploadimghandler } = require('./crud-api/handler')
 const router = express.Router()
 const imgUpload = require ('./imgUploads/imgUpload')
+
+const multer = Multer({
+    storage: Multer.MemoryStorage,
+    fileSize: 5 * 1024 * 1024
+})
 
 router.post('/register', registerHandler)
 

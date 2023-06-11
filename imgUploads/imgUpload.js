@@ -1,7 +1,6 @@
 'use strict'
 const {Storage} = require('@google-cloud/storage')
 const fs = require('fs')
-const dateFormat = require('dateformat')
 const path = require('path');
 
 const pathKey = path.resolve('./testing-diginote-2023-a9ca4c63bb0a.json')
@@ -25,8 +24,15 @@ let ImgUpload = {}
 ImgUpload.uploadToGcs = (req, res, next) => {
     if (!req.file) return next()
 
-    const gcsname = dateFormat(new Date(), "yyyymmdd-HHMMss")
-    const file = bucket.file(gcsname)
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const hours = String(currentDate.getHours()).padStart(2, '0');
+    const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+    const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+    const gcsname = `${year}${month}${day}-${hours}${minutes}${seconds}`;
+    const file = bucket.file(gcsname);
 
     const stream = file.createWriteStream({
         metadata: {

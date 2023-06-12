@@ -7,12 +7,12 @@ const pathKey = path.resolve('./testing-diginote-2023-a9ca4c63bb0a.json')
 
 // TODO: Sesuaikan konfigurasi Storage
 const gcs = new Storage({
-    projectId: 'testing-diginote-2023',
+    projectId: 'diginote-final',
     keyFilename: pathKey
 })
 
 // TODO: Tambahkan nama bucket yang digunakan
-const bucketName = 'url-photos-diginotes'
+const bucketName = 'digi-photos-bucket'
 const bucket = gcs.bucket(bucketName)
 
 function getPublicUrl(filename) {

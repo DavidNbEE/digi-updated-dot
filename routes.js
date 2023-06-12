@@ -20,9 +20,9 @@ router.get('/notes', getAllNoteHandler)
 
 router.get('/notes/:noteId', getNoteIdHandler)
 
-router.post('/notes/edit', editNoteHandler)
+router.post('/notes/edit/:noteId', editNoteHandler)
 
-router.delete('/notes/delete', deleteNoteHandler)
+router.delete('/notes/delete/:noteId', deleteNoteHandler)
 
 router.post('/upload', multer.single('image'), imgUpload.uploadToGcs, uploadimghandler )
 

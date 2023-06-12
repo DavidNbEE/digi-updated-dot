@@ -138,7 +138,8 @@ const getNoteIdHandler = async (req, res) => {
 
 const editNoteHandler = async (req, res) => {
   const { noteId } = req.params
-  const { title, description } = req.body
+  const title= req.body;
+  const description = req.body;
   const authToken = req.headers.authorization
   const secretKey = "diginote-secret"
 
@@ -162,11 +163,6 @@ const editNoteHandler = async (req, res) => {
   if (title) {
     updateFields.push('title = ?')
     queryParams.push(title)
-  }
-
-  if (tags) {
-    updateFields.push('tags = ?')
-    queryParams.push(tags)
   }
 
   if (description) {
@@ -195,13 +191,13 @@ const editNoteHandler = async (req, res) => {
 
       const updatedNote = {
         noteId,
+        userId,
         title,
-        tags,
-        body,
+        description,
         updated: new Date(),
       }
 
-      res.status(200).json(updatedNote);
+      res.status(200).json({error:false, message:'note updated!',updatedNote});
     })
 }
 
@@ -220,7 +216,7 @@ const deleteNoteHandler = async (req, res) => {
   const userId = decoded
 
   pool.query(
-    'DELETE FROM notes WHERE id = ? AND user_id = ?',
+    'DELETE FROM notes WHERE noteId = ? AND userId = ?',
     [noteId, userId],
     (error, results) => {
       if (error) {

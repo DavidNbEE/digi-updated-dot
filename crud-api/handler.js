@@ -14,47 +14,10 @@ const uploadimghandler = (req,res,next) => {
   res.status(200).json({error: true, message :" data", data, urlphoto})
 }
 
-const createNoteHandler2 = async (req, res) => {
-  const {title,body} = req.body;
-  const authToken = req.headers.authorization
-  const secretKey = "diginote-secret"
-
-  if (!title || !body) {
-    return res.status(400).json({ error: true, message: 'input the title and image' });
-  }
-  try {
-    jwt.verify(authToken, secretKey);
-  } catch (error) {
-    return res.status(401).json({ error: true, message: 'Unauthorized. Invalid token.' });
-  }
-    const decode = jwt.verify(authToken, secretKey);
-    const decoded = decode.userId
-    const userId = decoded
-    const noteId = uuidv4();
-    const note = {
-      noteId,
-      userId,
-      title,
-      body,
-      updated: new Date(),
-    };
-
-    pool.query(
-      'INSERT INTO notes2 (noteId, userId, title, body, updated) VALUES (?, ?, ?, ?, ?)',
-      [noteId, note.userId, title, note.body, note.updated],
-      (error) => {
-        if (error) {
-          console.error('Error inserting note:', error);
-          return res.status(500).json({ error: true, message: 'An error occurred while creating the note.' });
-        }
-
-        res.status(201).json({error : false, message: 'Note Created!', note});
-      }
-    );
-};
 
 const createNoteHandler = async (req, res) => {
-  const {title, data} = req.body;
+  const data = req.body;
+  const title = req.body.title
   const authToken = req.headers.authorization;
   const secretKey = "diginote-secret"
 
@@ -72,26 +35,28 @@ const createNoteHandler = async (req, res) => {
   const decoded = decode.userId
   const userId = decoded
 
-  const flaskresponse = await axios.post('linkAPIML', data, {
-    headers: {
-      'Content-Type' : 'multipart/form-data',
-    }
-  })
-  const predictions = flaskresponse.data.predictions
-  const extractedText = predictions
+  //const flaskresponse = await axios.post('linkAPIML', data, {
+   // headers: {
+    //  'Content-Type' : 'multipart/form-data',
+   // }
+  //})
+  //const predictions = flaskresponse.data.predictions
+  const extractedText = "iniadalahtextcobacoba"
 
+  let urlphoto;
   if (req.file && req.file.cloudStoragePublicUrl){
     data.imageUrl = req.file.cloudStoragePublicUrl
+    urlphoto = data.imageUrl
   }
-  const urlphoto = data.imageUrl
-    
-  const noteId = nanoid(16);
+
+  const url = urlphoto
+  const noteId = uuidv4();
   const note = {
     noteId,
     userId,
     title,
     description: extractedText,
-    imageUrl : urlphoto,
+    imageUrl : url,
     updated: new Date(),
   };
 
@@ -149,6 +114,10 @@ const getNoteIdHandler = async (req, res) => {
   } catch (error) {
     return res.status(401).json({ error: true, message: 'Unauthorized. Invalid token.' });
   }
+
+  const decode = jwt.verify(authToken, secretKey);
+  const decoded = decode.userId
+  const userId = decoded
 
   pool.query('SELECT * FROM notes WHERE noteId = ? and userId = ?',
   [noteId,userId],
@@ -276,5 +245,4 @@ const deleteNoteHandler = async (req, res) => {
     getNoteIdHandler,
     editNoteHandler,
     deleteNoteHandler,
-    uploadimghandler,
-    createNoteHandler2} 
+    uploadimghandler, }

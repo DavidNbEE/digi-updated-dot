@@ -1,7 +1,7 @@
 const express = require('express')
 const Multer = require('multer')
 const { registerHandler, loginHandler } = require('./reg-log-api/handler')
-const { getAllNoteHandler, createNoteHandler, getNoteIdHandler, editNoteHandler, deleteNoteHandler, uploadimghandler, createNoteHandler2 } = require('./crud-api/handler')
+const { getAllNoteHandler, createNoteHandler, getNoteIdHandler, editNoteHandler, deleteNoteHandler, uploadimghandler, createNoteHandler2, cobapredict } = require('./crud-api/handler')
 const router = express.Router()
 const imgUpload = require ('./imgUploads/imgUpload')
 
@@ -18,14 +18,12 @@ router.post('/notes',multer.single('image'), imgUpload.uploadToGcs, createNoteHa
 
 router.get('/notes', getAllNoteHandler)
 
-router.get('/notes/:id', getNoteIdHandler)
+router.get('/notes/:noteId', getNoteIdHandler)
 
 router.post('/notes/edit', editNoteHandler)
 
 router.delete('/notes/delete', deleteNoteHandler)
 
 router.post('/upload', multer.single('image'), imgUpload.uploadToGcs, uploadimghandler )
-
-router.post('/notes2', createNoteHandler2)
 
 module.exports = router
